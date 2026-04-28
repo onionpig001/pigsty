@@ -9,7 +9,9 @@ It currently ships with Telegram long polling, a generic HTTP webhook, a mock pr
 - Telegram Bot long polling, no public webhook required.
 - Telegram user allowlist.
 - HTTP webhook for other chat or automation systems.
-- Persistent task queue with `pending_approval`, `queued`, `running`, `completed`, `failed`, and `cancelled` states.
+- Natural-language task routing from chat messages.
+- Slash passthrough: `/status`, `/model`, `/help`, and other worker-level slash commands are forwarded to the configured worker instead of being interpreted by Pigsty.
+- Persistent task queue with `queued`, `running`, `completed`, `failed`, and `cancelled` states.
 - Mock provider for local demos.
 - Codex provider through `codex exec`.
 - Local output archive per task.
@@ -36,19 +38,13 @@ curl -s http://127.0.0.1:4188/health
 4. Put your numeric user id in `TELEGRAM_ALLOWED_USER_IDS`.
 5. Restart the service.
 
-Commands:
+Telegram is intentionally minimal. Pigsty exposes only one setup command:
 
 ```text
-plain text             create or run a task, depending on configuration
 /whoami                show Telegram user id and chat id
-/bridge_help           show bridge help
-/bridge_task <prompt>  create a task
-/bridge_run <task id>  run a pending task
-/bridge_quick <prompt> create and run immediately when AUTO_RUN=true
-/bridge_status [id]    show task status
-/bridge_tasks          show recent tasks
-/bridge_cancel <id>    cancel pending/queued/running task
 ```
+
+After allowlist setup, send natural language directly. Pigsty turns the message into a task and replies with the worker's result. Messages that start with `/` are passed through unchanged to the worker, except `/whoami`.
 
 ## Codex Provider
 
@@ -127,4 +123,3 @@ For a user-level LaunchAgent, prefer an absolute Node path and set `PATH`:
 - Keep `TELEGRAM_ALLOWED_USER_IDS` set for any real bot.
 - Treat chat-triggered task execution as a privileged remote control surface.
 - Keep `WORKSPACE_DIR` scoped to a safe directory.
-
