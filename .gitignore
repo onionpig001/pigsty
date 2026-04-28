@@ -1,0 +1,10 @@
+.env
+*.log
+bridge*.log
+data/*.json
+outputs/*
+!outputs/.gitkeep
+workspace/*
+!workspace/.gitkeep
+node_modules/
+.DS_Store

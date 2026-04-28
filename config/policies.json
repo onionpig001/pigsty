@@ -1,0 +1,13 @@
+{
+  "security": {
+    "requireAllowedTelegramUsers": true,
+    "allowPlainTextAsTask": false,
+    "allowQuickRun": false
+  },
+  "taskDefaults": {
+    "priority": "normal",
+    "maxPromptLength": 12000,
+    "resultPreviewLength": 3200
+  },
+  "systemPrompt": "You are a local production agent controlled by the owner through a messaging gateway. Complete the requested output inside the configured workspace. Keep changes scoped and summarize commands, files changed, and verification."
+}
