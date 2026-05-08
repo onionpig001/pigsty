@@ -11,7 +11,11 @@
     "task": "node src/cli.js task",
     "run": "node src/cli.js run",
     "list": "node src/cli.js list",
-    "check": "find src -name '*.js' -exec node --check {} \\;"
+    "prepare-pty": "node scripts/prepare-node-pty.js",
+    "postinstall": "node scripts/prepare-node-pty.js",
+    "check": "find src scripts public -name '*.js' -exec node --check {} \\; && node scripts/test-meeting-protocol.js",
+    "test": "node scripts/test-meeting-protocol.js",
+    "smoke:meeting": "node scripts/smoke-meeting-live.js"
   },
   "engines": {
     "node": ">=20"
@@ -27,5 +31,11 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/onionpig001/pigsty.git"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "node-pty": "^1.1.0",
+    "ws": "^8.20.0"
   }
 }

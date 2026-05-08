@@ -1,5 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { boolEnv, listEnv, loadEnv } from "./utils/env.js";
 
@@ -15,9 +16,29 @@ function loadPolicies() {
 }
 
 const policies = loadPolicies();
+const generatedWebUiToken = randomBytes(24).toString("base64url");
+
+function argsEnv(name) {
+  const raw = process.env[name] || "";
+  if (!raw.trim()) return [];
+
+  if (raw.trim().startsWith("[")) {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error(`${name} must be a JSON array when it starts with [`);
+    return parsed.map(String);
+  }
+
+  return raw.split(/\s+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function pathEnv(name, fallback) {
+  const value = process.env[name] || fallback;
+  return resolve(rootDir, value);
+}
 
 export const paths = {
   root: rootDir,
+  public: resolve(rootDir, "public"),
   dataDir: resolve(rootDir, "data"),
   tasks: resolve(rootDir, "data/tasks.json"),
   state: resolve(rootDir, "data/state.json"),
@@ -27,6 +48,7 @@ export const paths = {
 
 export function runtimeConfig() {
   const allowedTelegramUserIds = listEnv("TELEGRAM_ALLOWED_USER_IDS");
+  const webUiAllowedOrigins = listEnv("WEB_UI_ALLOWED_ORIGINS");
 
   return {
     host: process.env.HOST || "127.0.0.1",
@@ -55,6 +77,22 @@ export function runtimeConfig() {
       codexSandbox: process.env.CODEX_SANDBOX || "workspace-write",
       codexFullAuto: boolEnv("CODEX_FULL_AUTO", false),
       workspaceDir: paths.workspace
+    },
+    webUi: {
+      enabled: boolEnv("WEB_UI_ENABLED", true),
+      token: process.env.WEB_UI_TOKEN || generatedWebUiToken,
+      tokenGenerated: !process.env.WEB_UI_TOKEN,
+      allowedOrigins: webUiAllowedOrigins.length ? webUiAllowedOrigins : ["*"],
+      defaultCwd: pathEnv("WEB_TUI_DEFAULT_CWD", ".."),
+      allowedCwdRoots: listEnv("WEB_TUI_ALLOWED_CWD_ROOTS").map((path) => resolve(rootDir, path)),
+      maxSessions: Number(process.env.WEB_TUI_MAX_SESSIONS || 8),
+      codexBin: process.env.WEB_TUI_CODEX_BIN || process.env.CODEX_BIN || "codex",
+      codexArgs: argsEnv("WEB_TUI_CODEX_ARGS"),
+      claudeBin: process.env.WEB_TUI_CLAUDE_BIN || "claude",
+      claudeArgs: argsEnv("WEB_TUI_CLAUDE_ARGS"),
+      allowShell: boolEnv("WEB_TUI_ALLOW_SHELL", false),
+      shellBin: process.env.WEB_TUI_SHELL_BIN || process.env.SHELL || "/bin/bash",
+      shellArgs: argsEnv("WEB_TUI_SHELL_ARGS")
     },
     policies
   };

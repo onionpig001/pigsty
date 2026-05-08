@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Pigsty TUI</title>
+    <link rel="stylesheet" href="/vendor/xterm.css">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div id="login" class="login-view">
+      <main class="login-shell">
+        <form id="login-form" class="login-panel">
+          <div class="brand-block">
+            <h1>Pigsty TUI</h1>
+            <p>Connect to your own AI terminal servers</p>
+          </div>
+
+          <div id="login-message" class="message is-hidden"></div>
+
+          <label>
+            <span>Name</span>
+            <input id="profile-name-input" name="name" autocomplete="organization" placeholder="US Claude">
+          </label>
+          <label>
+            <span>Server</span>
+            <input id="server-input" name="server" type="text" inputmode="url" autocomplete="url" placeholder="http://31.97.146.163:4288" required>
+          </label>
+          <label>
+            <span>Token</span>
+            <input id="token-input" name="token" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="login-submit" type="submit">Save & Connect</button>
+        </form>
+
+        <section class="saved-panel">
+          <div class="section-title">
+            <span>Saved Servers</span>
+            <span id="login-profile-count">0</span>
+          </div>
+          <div id="login-profile-list" class="profile-list empty-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="app" class="app is-hidden">
+      <header class="topbar">
+        <button id="sidebar-toggle" class="icon-button" type="button" title="Connections" aria-label="Connections">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="title-block">
+          <strong id="active-title">Pigsty TUI</strong>
+          <small id="active-meta">No server connected</small>
+        </div>
+        <div class="top-actions">
+          <button id="refresh-button" class="compact-button" type="button">Refresh</button>
+          <button id="meeting-button" class="compact-button" type="button">Meeting</button>
+          <button id="new-session-button" class="compact-button" type="button">New</button>
+          <button id="kill-button" class="compact-button danger" type="button">Stop</button>
+          <button id="delete-session-button" class="compact-button danger" type="button">Delete</button>
+        </div>
+      </header>
+
+      <div id="app-message" class="message app-message is-hidden"></div>
+
+      <main class="layout">
+        <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close sidebar"></button>
+
+        <aside id="sidebar" class="sidebar">
+          <div class="sidebar-scroll">
+            <section class="panel-section">
+              <div class="section-title">
+                <span>Servers</span>
+                <span id="profile-count">0</span>
+              </div>
+              <div class="section-actions">
+                <button id="add-profile-button" type="button">Add</button>
+                <button id="edit-profile-button" type="button">Edit</button>
+                <button id="remove-profile-button" type="button" class="danger">Delete</button>
+              </div>
+              <div id="profile-list" class="profile-list empty-list"></div>
+            </section>
+
+            <section class="panel-section grow-section">
+              <div class="section-title">
+                <span>Sessions</span>
+                <span id="session-count">0</span>
+              </div>
+              <div id="session-list" class="session-list empty-list"></div>
+            </section>
+
+            <section class="panel-section">
+              <div class="section-title">New TUI</div>
+              <form id="session-form" class="stack-form">
+                <div id="tool-tabs" class="segmented"></div>
+                <label>
+                  <span>Name</span>
+                  <input id="session-name" name="name" autocomplete="off" placeholder="Optional">
+                </label>
+                <label>
+                  <span>Directory</span>
+                  <input id="session-cwd" name="cwd" autocomplete="off">
+                </label>
+                <button id="session-start-button" type="submit">Start Session</button>
+              </form>
+            </section>
+          </div>
+        </aside>
+
+        <section id="terminal-area" class="terminal-area">
+          <div id="terminal-empty" class="empty-state">
+            <strong>No session selected</strong>
+            <span>Select or start an AI TUI session</span>
+          </div>
+          <div id="terminal"></div>
+          <form id="send-form" class="send-bar">
+            <input id="send-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Send to TUI">
+            <button type="button" data-send-key="up" title="Arrow Up">Up</button>
+            <button type="button" data-send-key="down" title="Arrow Down">Down</button>
+            <button type="button" data-send-key="enter" title="Enter">Enter</button>
+            <button type="button" data-send-key="tab" title="Tab">Tab</button>
+            <button type="button" data-send-key="esc" title="Esc">Esc</button>
+            <button type="button" data-send-key="ctrlc" title="Ctrl+C">C-c</button>
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <section id="meeting-room" class="meeting-room is-hidden">
+          <header class="meeting-header">
+            <div class="meeting-title-block">
+              <strong id="meeting-room-title">Meeting</strong>
+              <span id="meeting-room-meta">0 participants</span>
+            </div>
+            <div class="meeting-actions">
+              <button id="meeting-terminal-button" type="button">Terminal</button>
+              <button id="meeting-add-button" type="button">Add AI</button>
+              <button id="meeting-auto-button" type="button">Auto Discussion Off</button>
+              <button id="meeting-end-button" type="button" class="danger">End Meeting</button>
+            </div>
+          </header>
+
+          <div class="meeting-body">
+            <aside class="meeting-rail">
+              <div class="section-title">Participants</div>
+              <div id="meeting-participant-list" class="participant-list"></div>
+            </aside>
+
+            <section class="meeting-chat">
+              <div id="meeting-chat-log" class="meeting-chat-log"></div>
+              <form id="meeting-composer-form" class="meeting-composer">
+                <select id="meeting-composer-mode" aria-label="Message mode">
+                  <option value="discuss">Discuss</option>
+                  <option value="task">Task & Execute</option>
+                </select>
+                <div class="composer-input-wrap">
+                  <textarea id="meeting-composer-input" rows="1" placeholder="Host message"></textarea>
+                  <div id="meeting-mention-menu" class="mention-menu is-hidden"></div>
+                </div>
+                <button id="meeting-send-button" type="submit">Send</button>
+              </form>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="profile-dialog" class="modal">
+      <form id="profile-form" class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <strong id="profile-dialog-title">Server</strong>
+            <span>Configure a backend host and token</span>
+          </div>
+          <button id="profile-dialog-close" type="button" class="icon-close" aria-label="Close">x</button>
+        </div>
+
+        <div id="profile-dialog-message" class="message is-hidden"></div>
+
+        <label>
+          <span>Name</span>
+          <input id="dialog-profile-name" autocomplete="organization" placeholder="Server name">
+        </label>
+        <label>
+          <span>URL</span>
+          <input id="dialog-server-url" type="text" inputmode="url" autocomplete="url" placeholder="http://host:4188">
+        </label>
+        <label>
+          <span>Token</span>
+          <input id="dialog-token" type="password" autocomplete="current-password">
+        </label>
+
+        <div class="modal-actions">
+          <button id="profile-cancel-button" type="button">Cancel</button>
+          <button id="profile-save-button" type="submit">Save & Connect</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="meeting-dialog" class="modal meeting-modal">
+      <form id="meeting-form" class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <strong id="meeting-dialog-title">Create Meeting</strong>
+            <span>Select running AI sessions and one secretary</span>
+          </div>
+          <button id="meeting-dialog-close" type="button" class="icon-close" aria-label="Close">x</button>
+        </div>
+
+        <div id="meeting-message" class="message is-hidden"></div>
+
+        <label>
+          <span>Topic</span>
+          <textarea id="meeting-title-input" rows="4" placeholder="Meeting topic"></textarea>
+        </label>
+
+        <div id="meeting-candidate-list" class="meeting-candidate-list"></div>
+
+        <label>
+          <span>Secretary</span>
+          <select id="meeting-secretary"></select>
+        </label>
+
+        <div class="modal-actions">
+          <button id="meeting-refresh-button" type="button">Refresh</button>
+          <button id="meeting-cancel-button" type="button">Cancel</button>
+          <button id="meeting-start-button" type="submit">Start Meeting</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

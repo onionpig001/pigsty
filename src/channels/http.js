@@ -1,28 +1,33 @@
 import { createServer } from "node:http";
 
 export class HttpChannel {
-  constructor({ config, router, store }) {
+  constructor({ config, router, store, webConsole }) {
     this.config = config;
     this.router = router;
     this.store = store;
+    this.webConsole = webConsole;
     this.server = null;
   }
 
   start() {
     const { host, port } = this.config;
     this.server = createServer((req, res) => this.handle(req, res));
+    this.webConsole?.attach(this.server);
     this.server.listen(port, host, () => {
       console.log(`Pigsty running at http://${host}:${port}`);
+      this.webConsole?.printAccessInfo();
     });
   }
 
   stop() {
+    this.webConsole?.stop();
     this.server?.close();
   }
 
   async handle(req, res) {
     try {
       const url = new URL(req.url, `http://${this.config.host}`);
+      if (await this.webConsole?.handle(req, res)) return;
 
       if (req.method === "GET" && url.pathname === "/health") {
         return sendJson(res, 200, {
