@@ -1,5 +1,6 @@
 import { Terminal } from "/vendor/xterm.mjs";
 import { FitAddon } from "/vendor/addon-fit.mjs";
+import { WebglAddon } from "/vendor/addon-webgl.mjs";
 import {
   buildMeetingPacket as buildMeetingProtocolPacket,
   cleanTerminalText,
@@ -20,7 +21,7 @@ const MEETING_QUEUE_LIMIT = 6;
 const MEETING_READY_WAIT_MS = 15000;
 const MEETING_READY_RETRY_MS = 500;
 const MEETING_EXECUTION_DISPATCH_DELAY_MS = 700;
-const TERMINAL_WRAP_GUTTER_COLS = 32;
+const TERMINAL_WRAP_GUTTER_COLS = 8;
 const TERMINAL_WRAP_GUTTER_ROWS = 2;
 
 const els = {
@@ -358,7 +359,37 @@ function initTerminal() {
   state.term.loadAddon(state.fit);
   state.term.open(els.terminal);
   state.term.onData((data) => sendInput(data));
+  mountAccurateRenderer(state.term);
   queueResize();
+}
+
+function mountAccurateRenderer(term) {
+  try {
+    const webgl = new WebglAddon();
+    webgl.onContextLoss?.(() => webgl.dispose());
+    term.loadAddon(webgl);
+    return;
+  } catch (err) {
+    console.warn("[xterm] WebGL renderer unavailable, trying canvas fallback:", err);
+  }
+  loadCanvasAddonUMD()
+    .then((CanvasAddon) => term.loadAddon(new CanvasAddon()))
+    .catch((err) => console.warn("[xterm] Canvas renderer unavailable, using DOM fallback:", err));
+}
+
+function loadCanvasAddonUMD() {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== "undefined" && window.CanvasAddon) return resolve(window.CanvasAddon);
+    const script = document.createElement("script");
+    script.src = "/vendor/addon-canvas.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.CanvasAddon) resolve(window.CanvasAddon);
+      else reject(new Error("CanvasAddon not exposed on window"));
+    };
+    script.onerror = () => reject(new Error("Failed to load /vendor/addon-canvas.js"));
+    document.head.appendChild(script);
+  });
 }
 
 async function createSession() {

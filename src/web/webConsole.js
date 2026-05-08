@@ -7,7 +7,9 @@ import { paths } from "../config.js";
 const vendorFiles = new Map([
   ["/vendor/xterm.css", resolve(paths.root, "node_modules/@xterm/xterm/css/xterm.css")],
   ["/vendor/xterm.mjs", resolve(paths.root, "node_modules/@xterm/xterm/lib/xterm.mjs")],
-  ["/vendor/addon-fit.mjs", resolve(paths.root, "node_modules/@xterm/addon-fit/lib/addon-fit.mjs")]
+  ["/vendor/addon-fit.mjs", resolve(paths.root, "node_modules/@xterm/addon-fit/lib/addon-fit.mjs")],
+  ["/vendor/addon-webgl.mjs", resolve(paths.root, "node_modules/@xterm/addon-webgl/lib/addon-webgl.mjs")],
+  ["/vendor/addon-canvas.js", resolve(paths.root, "node_modules/@xterm/addon-canvas/lib/addon-canvas.js")]
 ]);
 
 export class WebConsole {
